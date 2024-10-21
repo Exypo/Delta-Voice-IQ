@@ -1,0 +1,68 @@
+input_text:
+  delta_device_id:
+    name: delta_device_id
+    initial: !secret delta_device_id
+
+rest_command: 
+  delta_dispense_mills:
+    method: POST
+    url: >
+      https://device.legacy.deltafaucet.com/api/device/dispense?deviceId={{states.input_text.delta_device_id.state}}&milliliters={{mililiters}}
+    headers:
+      Authorization: !secret delta_token
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
+      Referer: https://device.legacy.deltafaucet.com/
+  delta_toggle:
+    method: POST
+    url: >
+      https://device.legacy.deltafaucet.com/api/device/toggleWater?deviceId={{states.input_text.delta_device_id.state}}
+    headers:
+      Authorization: !secret delta_token
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
+      Referer: https://device.legacy.deltafaucet.com/
+
+sensor:
+  - platform: rest
+    scan_interval: 600
+    name: delta_faucet_consumption_today
+    unique_id: delta_faucet_consumption_today
+    resource: https://device.legacy.deltafaucet.com/api/device/UsageReport
+    method: GET
+    params:
+      interval: 0
+      deviceId: !secret delta_device_id
+    headers:
+      Authorization: !secret delta_token
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
+      Referer: https://device.legacy.deltafaucet.com/
+    value_template: "{{ value_json.retObject.datasets[0].data[-1] | float * 3.78541 | round()}}"
+    json_attributes_path: "$.retObject"
+    json_attributes:
+      - datasets
+      - labels
+    unit_of_measurement: "L"
+    device_class: water
+    state_class: total_increasing
+    icon: mdi:water-pump
+  - platform: rest
+    scan_interval: 18000
+    name: delta_faucet_consumption_this_month
+    unique_id: delta_faucet_consumption_this_month
+    resource: https://device.legacy.deltafaucet.com/api/device/UsageReport
+    method: GET
+    params:
+      interval: 2
+      deviceId: !secret delta_device_id
+    headers:
+      Authorization: !secret delta_token
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
+      Referer: https://device.legacy.deltafaucet.com/
+    value_template: "{{ value_json.retObject.datasets[0].data[-1] | float * 3.78541 | round()}}"
+    json_attributes_path: "$.retObject"
+    json_attributes:
+      - datasets
+      - labels
+    unit_of_measurement: "L"
+    device_class: water
+    state_class: total_increasing
+    icon: mdi:water-pump
